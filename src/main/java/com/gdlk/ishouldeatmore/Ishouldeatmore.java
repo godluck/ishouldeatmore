@@ -1,11 +1,9 @@
 package com.gdlk.ishouldeatmore;
 
-import com.gdlk.ishouldeatmore.network.MessageSaturationSync;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -15,8 +13,6 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -55,28 +51,27 @@ public class Ishouldeatmore {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "ishouldeatmore" namespace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
-
-    // Creates a new Block with the id "ishouldeatmore:example_block", combining the namespace and path
-    public static final DeferredBlock<Block> EXAMPLE_BLOCK = BLOCKS.registerSimpleBlock("example_block", BlockBehaviour.Properties.of().mapColor(MapColor.STONE));
-    // Creates a new BlockItem with the id "ishouldeatmore:example_block", combining the namespace and path
-    public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("example_block", EXAMPLE_BLOCK);
+//
+//    // Creates a new Block with the id "ishouldeatmore:example_block", combining the namespace and path
+//    public static final DeferredBlock<Block> EXAMPLE_BLOCK = BLOCKS.registerSimpleBlock("example_block", BlockBehaviour.Properties.of().mapColor(MapColor.STONE));
+//    // Creates a new BlockItem with the id "ishouldeatmore:example_block", combining the namespace and path
+//    public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("example_block", EXAMPLE_BLOCK);
 
     // Creates a new food item with the id "ishouldeatmore:example_id", nutrition 1 and saturation 2
     public static final DeferredItem<Item> EXAMPLE_ITEM = ITEMS.registerSimpleItem("example_item", new Item.Properties().food(new FoodProperties.Builder()
             .alwaysEdible().nutrition(1).saturationModifier(2f).build()));
 
-    // Creates a creative tab with the id "ishouldeatmore:example_tab" for the example item, that is placed after the combat tab
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.ishouldeatmore")) //The language key for the title of your CreativeModeTab
-            .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
-            }).build());
+//    // Creates a creative tab with the id "ishouldeatmore:example_tab" for the example item, that is placed after the combat tab
+//    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
+//            .title(Component.translatable("itemGroup.ishouldeatmore")) //The language key for the title of your CreativeModeTab
+//            .withTabsBefore(CreativeModeTabs.COMBAT)
+//            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
+//            .displayItems((parameters, output) -> {
+//                output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
+//            }).build());
 
     private static final ResourceLocation FOOD_EMPTY_SPRITE = ResourceLocation.withDefaultNamespace("hud/food_empty");
     private static final ResourceLocation FOOD_HALF_SPRITE = ResourceLocation.withDefaultNamespace("hud/food_half");
-    private static final Map<UUID, Float> lastSaturationLevels = new HashMap<>();
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -177,7 +172,7 @@ public class Ishouldeatmore {
         guiGraphics.blitSprite(FOOD_EMPTY_SPRITE, x, y, 9, 9);
         guiGraphics.blitSprite(FOOD_HALF_SPRITE, x, y, 9, 9);
         String countString = """
-                *%d (+%d)""".formatted(foodLevel, (int) saturationLevel);
+                *%d (+%d)""".formatted(foodLevel, saturationLevel);
         guiGraphics.drawString(mc.gui.getFont(), Component.literal(countString),x + 9, y, 0xffffff);
         RenderSystem.disableBlend();
     }

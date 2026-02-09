@@ -1,6 +1,5 @@
 package com.gdlk.ishouldeatmore.mixin;
 
-import net.minecraft.util.Mth;
 import net.minecraft.world.food.FoodData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
