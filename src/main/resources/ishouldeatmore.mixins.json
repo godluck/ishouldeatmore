@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.gdlk.ishouldeatmore.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "FoodDataMixin",
+    "PlayerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

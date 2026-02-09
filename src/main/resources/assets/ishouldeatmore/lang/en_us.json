@@ -1,0 +1,13 @@
+{
+  "itemGroup.ishouldeatmore": "Example Mod Tab",
+  "block.ishouldeatmore.example_block": "Example Block",
+  "item.ishouldeatmore.example_item": "Example Item",
+
+  "ishouldeatmore.configuration.title": "I shold eat more Configs",
+  "ishouldeatmore.configuration.section.ishouldeatmore.common.toml": "I shold eat more Configs",
+  "ishouldeatmore.configuration.section.ishouldeatmore.common.toml.title": "I shold eat more Configs",
+  "ishouldeatmore.configuration.items": "Item List",
+  "ishouldeatmore.configuration.logDirtBlock": "Log Dirt Block",
+  "ishouldeatmore.configuration.magicNumberIntroduction": "Magic Number Text",
+  "ishouldeatmore.configuration.magicNumber": "Magic Number"
+}
