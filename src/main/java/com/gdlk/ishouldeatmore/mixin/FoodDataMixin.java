@@ -20,8 +20,23 @@ public abstract class FoodDataMixin {
 
     @Inject(method = "add", at = @At("HEAD"), cancellable = true)
     private void add(int foodLevel, float saturationLevel, CallbackInfo ci) {
-        this.foodLevel = foodLevel + this.foodLevel;
-        this.saturationLevel = saturationLevel + this.saturationLevel;
+        double magnitude = Math.max(Math.log10(this.foodLevel), 1);
+        if (foodLevel < magnitude) {
+            ci.cancel();
+            return;
+        }
+
+        double foodQuality= Math.log10(foodLevel) + 1;
+        this.foodLevel = (int)Math.round((double) foodLevel / magnitude * foodQuality) + this.foodLevel;
+
+        if (saturationLevel + this.saturationLevel > this.foodLevel) {
+            float diff = saturationLevel + this.saturationLevel - this.foodLevel;
+            int diffMagnitude = Math.max(Math.getExponent(diff), 1);
+            float saturationToAdd = (float) (saturationLevel / diffMagnitude * foodQuality);
+            this.saturationLevel += saturationToAdd;
+        } else {
+            this.saturationLevel = (float) (saturationLevel * foodQuality + this.saturationLevel);
+        }
         ci.cancel();
     }
 
