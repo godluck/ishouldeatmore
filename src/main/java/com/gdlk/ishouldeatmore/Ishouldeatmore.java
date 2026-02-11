@@ -78,6 +78,18 @@ public class Ishouldeatmore {
     }
 
     @SubscribeEvent
+    public void onFoodEat(LivingEntityUseItemEvent.Start event) {
+        if (event.getEntity() instanceof Player player) {
+            ItemStack food = event.getItem();
+            FoodProperties foodProperties = food.getFoodProperties(null);
+            boolean shouldApply = foodProperties != null && foodProperties.nutrition() > 0;
+            if (shouldApply) {
+                event.setDuration(0);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void onFoodEaten(LivingEntityUseItemEvent.Finish event) {
         if (event.getEntity() instanceof Player player) {
             ItemStack food = event.getItem();
