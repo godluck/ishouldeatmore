@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "F F",
+    "MMM",
+    "BBB"
+  ],
+  "key": {
+    "F": {
+      "item": "minecraft:enchanted_golden_apple"
+    },
+    "M": {
+      "item": "ishouldeatmore:arm_chestplate"
+    },
+    "B": {
+      "item": "ishouldeatmore:bone_chestplate"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "ishouldeatmore:golden_arm_chestplate"
+  }
+}

@@ -1,5 +1,6 @@
 package com.gdlk.ishouldeatmore.mixin;
 
+import com.gdlk.ishouldeatmore.network.FoodDataSync;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.food.FoodData;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,10 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.io.*;
 import java.util.*;
 
-import static com.gdlk.ishouldeatmore.Ishouldeatmore.LOGGER;
-
 @Mixin(value = {FoodData.class}, priority = 1001)
-public abstract class FoodDataMixin {
+public abstract class FoodDataMixin implements FoodDataSync {
     private int foodLevel;
     private float saturationLevel;
     private float exhaustionLevel;
@@ -45,13 +44,9 @@ public abstract class FoodDataMixin {
         int types = new HashSet<>(this.foodEaten).size();
         // Scale the foodLevel by (1,2] base on record count
         double varietyScale = (double) types / magInt + 1;
-        LOGGER.info("""
-                %s %s %s""".formatted(types, varietyScale, foodKey));
 
         double foodQuality= Math.log10(foodLevel) + 1;
         this.foodLevel = (int)Math.round((double) foodLevel / magnitude * foodQuality * varietyScale) + this.foodLevel;
-        LOGGER.info("""
-                %s:-----%s-----""".formatted((int)Math.round((double) foodLevel / magnitude * foodQuality * varietyScale),this.foodLevel));
         if (saturationLevel + this.saturationLevel > this.foodLevel) {
             float diff = saturationLevel + this.saturationLevel - this.foodLevel;
             int diffMagnitude = Math.max(Math.getExponent(diff), 1);
@@ -67,6 +62,19 @@ public abstract class FoodDataMixin {
     @Inject(method = "needsFood", at = @At("HEAD"), cancellable = true)
     private void needsFood(CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(true);
+    }
+
+    @Override
+    public List<String> ishouldeatmore$getFoodEaten() {
+        if (this.foodEaten == null) {
+            return List.of();
+        }
+        return new ArrayList<>(this.foodEaten);
+    }
+
+    @Override
+    public void ishouldeatmore$setFoodEaten(List<String> foodEaten) {
+        this.foodEaten = foodEaten == null ? new ArrayDeque<>() : new ArrayDeque<>(foodEaten);
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("HEAD"), cancellable = true)
@@ -98,14 +106,16 @@ public abstract class FoodDataMixin {
         compoundTag.putInt("foodTickTimer", this.tickTimer);
         compoundTag.putFloat("foodSaturationLevel", this.saturationLevel);
         compoundTag.putFloat("foodExhaustionLevel", this.exhaustionLevel);
-        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(byteOut);
-            out.writeObject(this.foodEaten);
-            out.flush();
-            compoundTag.putByteArray("foodEaten", byteOut.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (this.foodEaten != null && !this.foodEaten.isEmpty()) {
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            try {
+                ObjectOutputStream out = new ObjectOutputStream(byteOut);
+                out.writeObject(this.foodEaten);
+                out.flush();
+                compoundTag.putByteArray("foodEaten", byteOut.toByteArray());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         ci.cancel();
     }

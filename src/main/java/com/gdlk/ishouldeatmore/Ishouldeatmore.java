@@ -1,27 +1,38 @@
 package com.gdlk.ishouldeatmore;
 
-import com.gdlk.ishouldeatmore.item.FoodSword;
+import com.gdlk.ishouldeatmore.item.*;
+import com.gdlk.ishouldeatmore.network.AirJumpPayload;
+import com.gdlk.ishouldeatmore.network.FoodDataSync;
+import com.gdlk.ishouldeatmore.network.SyncFoodEatenPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.*;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerDestroyItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.food.FoodProperties;
@@ -49,14 +60,66 @@ public class Ishouldeatmore {
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "ishouldeatmore" namespace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    public static final DeferredItem<Item> FOOD_SWORD = ITEMS.registerItem("food_sword", FoodSword::new);
+    public static final DeferredItem<Item> FAT_SWORD = ITEMS.registerItem("fat_sword", FatSword::new, new Item.Properties());
+    public static final DeferredItem<Item> MUSCLE_SWORD = ITEMS.registerItem("muscle_sword", MuscleSword::new, new Item.Properties());
+    public static final DeferredItem<Item> BONE_SWORD = ITEMS.registerItem("bone_sword", BoneSword::new, new Item.Properties());
+    public static final DeferredItem<Item> ARM_SWORD = ITEMS.registerItem("arm_sword", ArmSword::new, new Item.Properties());
+    public static final DeferredItem<Item> GOLDEN_ARM_SWORD = ITEMS.registerItem("golden_arm_sword", GoldenArmSword::new, new Item.Properties());
+
+    // Armor sets by tier (Fat=Leather, Muscle=Chain, Bone=Iron, Arm=Diamond, Golden Arm=Netherite)
+    // All are FoodArmor: damage is reduced by consuming food level and saturation when wearing any piece
+    public static final DeferredItem<Item> FAT_HELMET = ITEMS.register("fat_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final DeferredItem<Item> FAT_CHESTPLATE = ITEMS.register("fat_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final DeferredItem<Item> FAT_LEGGINGS = ITEMS.register("fat_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final DeferredItem<Item> FAT_BOOTS = ITEMS.register("fat_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final DeferredItem<Item> MUSCLE_HELMET = ITEMS.register("muscle_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final DeferredItem<Item> MUSCLE_CHESTPLATE = ITEMS.register("muscle_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final DeferredItem<Item> MUSCLE_LEGGINGS = ITEMS.register("muscle_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final DeferredItem<Item> MUSCLE_BOOTS = ITEMS.register("muscle_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final DeferredItem<Item> BONE_HELMET = ITEMS.register("bone_helmet", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final DeferredItem<Item> BONE_CHESTPLATE = ITEMS.register("bone_chestplate", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final DeferredItem<Item> BONE_LEGGINGS = ITEMS.register("bone_leggings", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final DeferredItem<Item> BONE_BOOTS = ITEMS.register("bone_boots", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final DeferredItem<Item> ARM_HELMET = ITEMS.register("arm_helmet", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final DeferredItem<Item> ARM_CHESTPLATE = ITEMS.register("arm_chestplate", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final DeferredItem<Item> ARM_LEGGINGS = ITEMS.register("arm_leggings", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final DeferredItem<Item> ARM_BOOTS = ITEMS.register("arm_boots", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final DeferredItem<Item> GOLDEN_ARM_HELMET = ITEMS.register("golden_arm_helmet", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final DeferredItem<Item> GOLDEN_ARM_CHESTPLATE = ITEMS.register("golden_arm_chestplate", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final DeferredItem<Item> GOLDEN_ARM_LEGGINGS = ITEMS.register("golden_arm_leggings", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final DeferredItem<Item> GOLDEN_ARM_BOOTS = ITEMS.register("golden_arm_boots", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.BOOTS, new Item.Properties()));
+
     // Creates a creative tab with the id "ishouldeatmore:food_tool_tab" for the example item, that is placed after the combat tab
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("food_tool_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.ishouldeatmore")) //The language key for the title of your CreativeModeTab
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> FOOD_SWORD.get().getDefaultInstance())
+            .icon(() -> FAT_SWORD.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.accept(FOOD_SWORD.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
+                output.accept(FAT_SWORD.get());
+                output.accept(MUSCLE_SWORD.get());
+                output.accept(BONE_SWORD.get());
+                output.accept(ARM_SWORD.get());
+                output.accept(GOLDEN_ARM_SWORD.get());
+                output.accept(FAT_HELMET.get());
+                output.accept(FAT_CHESTPLATE.get());
+                output.accept(FAT_LEGGINGS.get());
+                output.accept(FAT_BOOTS.get());
+                output.accept(MUSCLE_HELMET.get());
+                output.accept(MUSCLE_CHESTPLATE.get());
+                output.accept(MUSCLE_LEGGINGS.get());
+                output.accept(MUSCLE_BOOTS.get());
+                output.accept(BONE_HELMET.get());
+                output.accept(BONE_CHESTPLATE.get());
+                output.accept(BONE_LEGGINGS.get());
+                output.accept(BONE_BOOTS.get());
+                output.accept(ARM_HELMET.get());
+                output.accept(ARM_CHESTPLATE.get());
+                output.accept(ARM_LEGGINGS.get());
+                output.accept(ARM_BOOTS.get());
+                output.accept(GOLDEN_ARM_HELMET.get());
+                output.accept(GOLDEN_ARM_CHESTPLATE.get());
+                output.accept(GOLDEN_ARM_LEGGINGS.get());
+                output.accept(GOLDEN_ARM_BOOTS.get());
             }).build());
 
     private static final ResourceLocation FOOD_EMPTY_SPRITE = ResourceLocation.withDefaultNamespace("hud/food_empty");
@@ -72,9 +135,40 @@ public class Ishouldeatmore {
         // Note that this is necessary if and only if we want *this* class (ishouldeatmore) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
+        modEventBus.addListener(RegisterPayloadHandlersEvent.class, this::registerPayloads);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+    }
+
+    private void registerPayloads(RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar("1");
+        registrar.playToClient(SyncFoodEatenPayload.TYPE, SyncFoodEatenPayload.STREAM_CODEC,(payload, context) -> {
+            context.enqueueWork(() -> {
+                var player = Minecraft.getInstance().player;
+                if (player != null && player.getFoodData() instanceof FoodDataSync sync) {
+                    sync.ishouldeatmore$setFoodEaten(payload.foodEaten());
+                }
+            });
+        });
+        registrar.playToServer(AirJumpPayload.TYPE, AirJumpPayload.STREAM_CODEC, (payload, context) -> {
+            context.enqueueWork(() -> {
+                if(context.player() instanceof ServerPlayer player){
+                    if (FoodArmor.isWearingFoodLeggings(player) && payload.delta() > 3) {
+                        Vec3 motion = player.getDeltaMovement();
+                        if (motion.y < 0.1){
+                            player.setDeltaMovement(motion.x, 0, motion.z);
+                        }
+                        float saturationLevel = player.getFoodData().getSaturationLevel();
+                        if (saturationLevel >= 0.01f){
+                            player.getFoodData().setSaturation(saturationLevel - 0.01f);
+                        } else {
+                            player.getFoodData().setSaturation(0);
+                        }
+                    }
+                }
+            });
+        });
     }
 
     @SubscribeEvent
@@ -96,30 +190,20 @@ public class Ishouldeatmore {
             FoodProperties foodProperties = food.getFoodProperties(null);
             boolean shouldApply = foodProperties != null && foodProperties.nutrition() > 0;
             if (shouldApply) {
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.DAMAGE_RESISTANCE,
-                        120000,
-                        5
-                ));
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.HUNGER,
-                        1200,
-                        20
-                ));
+                // Sync foodEaten to client so client-side FoodData stays in sync
+                if (player instanceof ServerPlayer serverPlayer && player.getFoodData() instanceof FoodDataSync sync) {
+                    PacketDistributor.sendToPlayer(serverPlayer, new SyncFoodEatenPayload(sync.ishouldeatmore$getFoodEaten()));
+                }
             }
         }
     }
 
     @SubscribeEvent
-    public void onPlayerClone(PlayerEvent.Clone event) {
-        if (!event.isWasDeath()){
-            return;
-        }
-        Player originPlayer = event.getOriginal();
+    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         Player player = event.getEntity();
-        player.getFoodData().setFoodLevel(originPlayer.getFoodData().getFoodLevel());
-        player.getFoodData().setSaturation(originPlayer.getFoodData().getSaturationLevel());
-        player.getFoodData().setExhaustion(originPlayer.getFoodData().getExhaustionLevel());
+        if (player instanceof ServerPlayer serverPlayer && player.getFoodData() instanceof FoodDataSync sync) {
+            PacketDistributor.sendToPlayer(serverPlayer, new SyncFoodEatenPayload(sync.ishouldeatmore$getFoodEaten()));
+        }
     }
 
     @SubscribeEvent
@@ -148,47 +232,90 @@ public class Ishouldeatmore {
     }
 
     @SubscribeEvent
-    public void onPlayerHitted(LivingIncomingDamageEvent event){
-        if (event.getEntity() instanceof Player player){
-            int foodLevel = player.getFoodData().getFoodLevel();
-            int saturationLevel = (int)player.getFoodData().getSaturationLevel();
-            if (Math.log10(foodLevel)<2){
+    public void onPlayerHitted(LivingIncomingDamageEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            if (FoodArmor.countFoodArmorPieces(player) == 0) {
                 return;
             }
-            float originalDamage = event.getOriginalAmount();
-            if (originalDamage < saturationLevel){
-                player.getFoodData().setSaturation(saturationLevel - originalDamage);
-                event.setAmount(0);
-            } else if (originalDamage < foodLevel + saturationLevel){
-                player.getFoodData().setFoodLevel((int) Math.floor(foodLevel + saturationLevel - originalDamage));
-                player.getFoodData().setSaturation(0);
-                event.setAmount(0);
-            } else {
+            int foodLevel = player.getFoodData().getFoodLevel();
+            float saturationLevel = player.getFoodData().getSaturationLevel();
+            if (Math.log10(Math.max(1, foodLevel)) < 2) {
+                return;
+            }
+            float originalDamage = event.getAmount();
+            // Tier-based cap: full set fat=30%, full set golden_arm=100%; mixed sets use average tier
+            float effectiveMaxReduction = FoodArmor.getEffectiveMaxReduction(player);
+            float damageToAbsorb = originalDamage * effectiveMaxReduction;
+            float pool = saturationLevel + foodLevel;
+            float actuallyAbsorbed = Math.min(damageToAbsorb, pool);
+            if (actuallyAbsorbed <= 0) {
+                return;
+            }
+            // Consume saturation first, then food
+            if (saturationLevel >= actuallyAbsorbed) {
+                player.getFoodData().setSaturation(saturationLevel - actuallyAbsorbed);
+            } else if (saturationLevel + foodLevel <= actuallyAbsorbed) {
                 player.getFoodData().setFoodLevel(0);
                 player.getFoodData().setSaturation(0);
-                event.setAmount(originalDamage - saturationLevel - foodLevel);
+            } else {
+                player.getFoodData().setSaturation(0);
+                player.getFoodData().setFoodLevel(Math.max(0, (int) Math.floor(foodLevel + saturationLevel - actuallyAbsorbed)));
+            }
+            event.setAmount(originalDamage - actuallyAbsorbed);
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerDestroyItem(PlayerDestroyItemEvent event) {
+        ItemStack original = event.getOriginal();
+        Player player = event.getEntity();
+        if (original.getItem() instanceof FatSword) {
+            ItemStack muscle = new ItemStack(MUSCLE_SWORD.asItem(), 1);
+            if (event.getHand() != null) {
+                player.setItemInHand(event.getHand(), muscle);
+            }
+        } else {
+            // Fat armor -> muscle armor (same slot), like fat sword -> muscle sword
+            Item replacement = null;
+            EquipmentSlot slot = null;
+            if (original.is(FAT_HELMET.get())) { replacement = MUSCLE_HELMET.get(); slot = EquipmentSlot.HEAD; }
+            else if (original.is(FAT_CHESTPLATE.get())) { replacement = MUSCLE_CHESTPLATE.get(); slot = EquipmentSlot.CHEST; }
+            else if (original.is(FAT_LEGGINGS.get())) { replacement = MUSCLE_LEGGINGS.get(); slot = EquipmentSlot.LEGS; }
+            else if (original.is(FAT_BOOTS.get())) { replacement = MUSCLE_BOOTS.get(); slot = EquipmentSlot.FEET; }
+            if (replacement != null && slot != null) {
+                player.setItemSlot(slot, new ItemStack(replacement, 1));
             }
         }
     }
 
-//    @SubscribeEvent void onPlayerAttack(LivingDamageEvent.Pre event){
-//        if (event.getSource().getEntity() instanceof Player player){
-//            int foodLevel = player.getFoodData().getFoodLevel();
-//            int saturationLevel = (int)player.getFoodData().getSaturationLevel();
-//            float attackModifier = (float) Math.log10(foodLevel);
-//            if (attackModifier < 1){
-//                return;
-//            }
-//            if (attackModifier < saturationLevel){
-//                player.getFoodData().setSaturation(saturationLevel - attackModifier);
-//            } else if (attackModifier < foodLevel + saturationLevel){
-//                player.getFoodData().setFoodLevel((int) Math.floor(foodLevel + saturationLevel - attackModifier));
-//                player.getFoodData().setSaturation(0);
-//            } else {
-//                return;
-//            }
-//            float originalDamage = event.getOriginalDamage();
-//            event.setNewDamage(originalDamage + attackModifier*attackModifier);
-//        }
-//    }
+    @SubscribeEvent
+    public void onItemTooltip(ItemTooltipEvent event) {
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty()) return;
+        String id = stack.getDescriptionId();
+        if (id.startsWith("item." + MODID + ".")) {
+            event.getToolTip().add(Component.translatable(id + ".tooltip").withStyle(ChatFormatting.GRAY));
+            if (stack.is(FAT_SWORD.get()) || stack.is(FAT_HELMET.get()) || stack.is(FAT_CHESTPLATE.get())
+                    || stack.is(FAT_LEGGINGS.get()) || stack.is(FAT_BOOTS.get())) {
+                event.getToolTip().add(Component.translatable("item.ishouldeatmore.craft_tip.fat_to_muscle").withStyle(ChatFormatting.DARK_GREEN));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        Minecraft mc = Minecraft.getInstance();
+        boolean jumpPressed = mc.options.keyJump.isDown();
+        if (jumpPressed && FoodArmor.isWearingFoodLeggings(player) && player.level().isClientSide) {
+            double delta = Math.log10(player.getFoodData().getFoodLevel());
+            if (delta > 3){
+                Vec3 motion = player.getDeltaMovement();
+                if (motion.y < 0.1){
+                    player.setDeltaMovement(motion.x, 0, motion.z);
+                }
+                PacketDistributor.sendToServer(new AirJumpPayload(delta));
+            }
+        }
+    }
 }

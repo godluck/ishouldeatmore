@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " F ",
+    " F ",
+    " S "
+  ],
+  "key": {
+    "F": {
+      "tag": "c:foods"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "ishouldeatmore:fat_sword"
+  }
+}

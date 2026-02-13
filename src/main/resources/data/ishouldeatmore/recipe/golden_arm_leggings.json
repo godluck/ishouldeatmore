@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MFM",
+    "B B",
+    "B B"
+  ],
+  "key": {
+    "F": {
+      "item": "minecraft:enchanted_golden_apple"
+    },
+    "M": {
+      "item": "ishouldeatmore:arm_leggings"
+    },
+    "B": {
+      "item": "ishouldeatmore:bone_leggings"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "ishouldeatmore:golden_arm_leggings"
+  }
+}

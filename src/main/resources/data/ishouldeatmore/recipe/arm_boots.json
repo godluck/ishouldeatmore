@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "F M",
+    "B B"
+  ],
+  "key": {
+    "F": {
+      "item": "ishouldeatmore:fat_boots"
+    },
+    "M": {
+      "item": "ishouldeatmore:muscle_boots"
+    },
+    "B": {
+      "item": "ishouldeatmore:bone_boots"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "ishouldeatmore:arm_boots"
+  }
+}
