@@ -60,34 +60,34 @@ public class Ishouldeatmore {
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "ishouldeatmore" namespace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    public static final DeferredItem<Item> FAT_SWORD = ITEMS.registerItem("fat_sword", FatSword::new, new Item.Properties());
-    public static final DeferredItem<Item> MUSCLE_SWORD = ITEMS.registerItem("muscle_sword", MuscleSword::new, new Item.Properties());
-    public static final DeferredItem<Item> BONE_SWORD = ITEMS.registerItem("bone_sword", BoneSword::new, new Item.Properties());
-    public static final DeferredItem<Item> ARM_SWORD = ITEMS.registerItem("arm_sword", ArmSword::new, new Item.Properties());
-    public static final DeferredItem<Item> GOLDEN_ARM_SWORD = ITEMS.registerItem("golden_arm_sword", GoldenArmSword::new, new Item.Properties());
+    public static final DeferredItem<Item> FAT_SWORD = ITEMS.registerItem("fat_sword", FatSword::new, new Item.Properties().durability(100));
+    public static final DeferredItem<Item> MUSCLE_SWORD = ITEMS.registerItem("muscle_sword", MuscleSword::new, new Item.Properties().durability(200));
+    public static final DeferredItem<Item> BONE_SWORD = ITEMS.registerItem("bone_sword", BoneSword::new, new Item.Properties().durability(300));
+    public static final DeferredItem<Item> ARM_SWORD = ITEMS.registerItem("arm_sword", ArmSword::new, new Item.Properties().durability(600));
+    public static final DeferredItem<Item> GOLDEN_ARM_SWORD = ITEMS.registerItem("golden_arm_sword", GoldenArmSword::new, new Item.Properties().durability(2000));
 
     // Armor sets by tier (Fat=Leather, Muscle=Chain, Bone=Iron, Arm=Diamond, Golden Arm=Netherite)
     // All are FoodArmor: damage is reduced by consuming food level and saturation when wearing any piece
-    public static final DeferredItem<Item> FAT_HELMET = ITEMS.register("fat_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final DeferredItem<Item> FAT_CHESTPLATE = ITEMS.register("fat_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final DeferredItem<Item> FAT_LEGGINGS = ITEMS.register("fat_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final DeferredItem<Item> FAT_BOOTS = ITEMS.register("fat_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties()));
-    public static final DeferredItem<Item> MUSCLE_HELMET = ITEMS.register("muscle_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final DeferredItem<Item> MUSCLE_CHESTPLATE = ITEMS.register("muscle_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final DeferredItem<Item> MUSCLE_LEGGINGS = ITEMS.register("muscle_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final DeferredItem<Item> MUSCLE_BOOTS = ITEMS.register("muscle_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties()));
-    public static final DeferredItem<Item> BONE_HELMET = ITEMS.register("bone_helmet", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final DeferredItem<Item> BONE_CHESTPLATE = ITEMS.register("bone_chestplate", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final DeferredItem<Item> BONE_LEGGINGS = ITEMS.register("bone_leggings", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final DeferredItem<Item> BONE_BOOTS = ITEMS.register("bone_boots", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.BOOTS, new Item.Properties()));
-    public static final DeferredItem<Item> ARM_HELMET = ITEMS.register("arm_helmet", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final DeferredItem<Item> ARM_CHESTPLATE = ITEMS.register("arm_chestplate", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final DeferredItem<Item> ARM_LEGGINGS = ITEMS.register("arm_leggings", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final DeferredItem<Item> ARM_BOOTS = ITEMS.register("arm_boots", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.BOOTS, new Item.Properties()));
-    public static final DeferredItem<Item> GOLDEN_ARM_HELMET = ITEMS.register("golden_arm_helmet", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final DeferredItem<Item> GOLDEN_ARM_CHESTPLATE = ITEMS.register("golden_arm_chestplate", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final DeferredItem<Item> GOLDEN_ARM_LEGGINGS = ITEMS.register("golden_arm_leggings", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final DeferredItem<Item> GOLDEN_ARM_BOOTS = ITEMS.register("golden_arm_boots", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final DeferredItem<Item> FAT_HELMET = ITEMS.register("fat_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties().durability(100)));
+    public static final DeferredItem<Item> FAT_CHESTPLATE = ITEMS.register("fat_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(100)));
+    public static final DeferredItem<Item> FAT_LEGGINGS = ITEMS.register("fat_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(100)));
+    public static final DeferredItem<Item> FAT_BOOTS = ITEMS.register("fat_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties().durability(100)));
+    public static final DeferredItem<Item> MUSCLE_HELMET = ITEMS.register("muscle_helmet", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET, new Item.Properties().durability(200)));
+    public static final DeferredItem<Item> MUSCLE_CHESTPLATE = ITEMS.register("muscle_chestplate", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(200)));
+    public static final DeferredItem<Item> MUSCLE_LEGGINGS = ITEMS.register("muscle_leggings", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(200)));
+    public static final DeferredItem<Item> MUSCLE_BOOTS = ITEMS.register("muscle_boots", () -> new FoodArmor(ArmorMaterials.CHAIN, ArmorItem.Type.BOOTS, new Item.Properties().durability(200)));
+    public static final DeferredItem<Item> BONE_HELMET = ITEMS.register("bone_helmet", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.HELMET, new Item.Properties().durability(300)));
+    public static final DeferredItem<Item> BONE_CHESTPLATE = ITEMS.register("bone_chestplate", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(300)));
+    public static final DeferredItem<Item> BONE_LEGGINGS = ITEMS.register("bone_leggings", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(300)));
+    public static final DeferredItem<Item> BONE_BOOTS = ITEMS.register("bone_boots", () -> new FoodArmor(ArmorMaterials.IRON, ArmorItem.Type.BOOTS, new Item.Properties().durability(300)));
+    public static final DeferredItem<Item> ARM_HELMET = ITEMS.register("arm_helmet", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> ARM_CHESTPLATE = ITEMS.register("arm_chestplate", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> ARM_LEGGINGS = ITEMS.register("arm_leggings", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> ARM_BOOTS = ITEMS.register("arm_boots", () -> new FoodArmor(ArmorMaterials.DIAMOND, ArmorItem.Type.BOOTS, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> GOLDEN_ARM_HELMET = ITEMS.register("golden_arm_helmet", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.HELMET, new Item.Properties().durability(2000)));
+    public static final DeferredItem<Item> GOLDEN_ARM_CHESTPLATE = ITEMS.register("golden_arm_chestplate", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> GOLDEN_ARM_LEGGINGS = ITEMS.register("golden_arm_leggings", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(600)));
+    public static final DeferredItem<Item> GOLDEN_ARM_BOOTS = ITEMS.register("golden_arm_boots", () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.BOOTS, new Item.Properties().durability(600)));
 
     // Creates a creative tab with the id "ishouldeatmore:food_tool_tab" for the example item, that is placed after the combat tab
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("food_tool_tab", () -> CreativeModeTab.builder()
@@ -262,6 +262,21 @@ public class Ishouldeatmore {
                 player.getFoodData().setFoodLevel(Math.max(0, (int) Math.floor(foodLevel + saturationLevel - actuallyAbsorbed)));
             }
             event.setAmount(originalDamage - actuallyAbsorbed);
+
+            // Damage equipped food armor when hit (server-only so stacks sync); split among worn pieces only
+            if (!player.level().isClientSide() && actuallyAbsorbed > 0) {
+                int wornCount = FoodArmor.countFoodArmorPieces(player);
+                if (wornCount > 0) {
+                    int durabilityDamagePerPiece = Math.max(1, (int) Math.ceil(actuallyAbsorbed / wornCount));
+                    EquipmentSlot[] armorSlots = { EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET };
+                    for (EquipmentSlot slot : armorSlots) {
+                        ItemStack armorStack = player.getItemBySlot(slot);
+                        if (!armorStack.isEmpty() && armorStack.getItem() instanceof FoodArmor) {
+                            armorStack.hurtAndBreak(durabilityDamagePerPiece, player, slot);
+                        }
+                    }
+                }
+            }
         }
     }
 

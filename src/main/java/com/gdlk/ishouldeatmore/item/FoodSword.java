@@ -2,6 +2,7 @@ package com.gdlk.ishouldeatmore.item;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -44,6 +45,7 @@ public class FoodSword extends SwordItem {
                 foodData.setFoodLevel(0);
                 foodData.setSaturation(0);
             }
+            stack.hurtAndBreak(1, attacker, EquipmentSlot.MAINHAND);
         }
     }
 }

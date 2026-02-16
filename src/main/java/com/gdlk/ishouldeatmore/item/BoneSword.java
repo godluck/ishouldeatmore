@@ -2,7 +2,6 @@ package com.gdlk.ishouldeatmore.item;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.Tiers;
 
 public class BoneSword extends FoodSword{
