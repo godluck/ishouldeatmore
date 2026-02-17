@@ -1,11 +1,6 @@
 package com.gdlk.ishouldeatmore;
 
-import com.gdlk.ishouldeatmore.item.FoodArmor;
-import com.gdlk.ishouldeatmore.network.AirJumpPayload;
-import com.gdlk.ishouldeatmore.network.FoodDataSync;
-import com.gdlk.ishouldeatmore.network.SyncFoodEatenPayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -14,8 +9,6 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import static com.gdlk.ishouldeatmore.Ishouldeatmore.LOGGER;
 
