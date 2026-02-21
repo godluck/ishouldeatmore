@@ -9,4 +9,6 @@ import java.util.List;
 public interface FoodDataSync {
     List<String> ishouldeatmore$getFoodEaten();
     void ishouldeatmore$setFoodEaten(List<String> foodEaten);
+    int ishouldeatmore$getFoodLevelStage();
+    void ishouldeatmore$setFoodLevelStage(int foodLevelStage);
 }

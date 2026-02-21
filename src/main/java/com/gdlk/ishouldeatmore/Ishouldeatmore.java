@@ -1,17 +1,21 @@
 package com.gdlk.ishouldeatmore;
 
 import com.gdlk.ishouldeatmore.item.*;
-import com.gdlk.ishouldeatmore.network.AirJumpPayload;
-import com.gdlk.ishouldeatmore.network.FoodDataSync;
-import com.gdlk.ishouldeatmore.network.SyncFoodEatenPayload;
+import com.gdlk.ishouldeatmore.mixin.FoodDataMixin;
+import com.gdlk.ishouldeatmore.network.*;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -21,7 +25,6 @@ import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerDestroyItemEvent;
@@ -31,6 +34,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -47,6 +51,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.client.event.InputEvent;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(Ishouldeatmore.MODID)
@@ -87,7 +92,8 @@ public class Ishouldeatmore {
             () -> new FoodArmor(ArmorMaterials.LEATHER, ArmorItem.Type.CHESTPLATE,
                     new Item.Properties().durability(100)));
     public static final DeferredItem<Item> FAT_LEGGINGS = ITEMS.register("fat_leggings",
-            () -> new FoodArmor(ArmorMaterials.LEATHER, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(100)));
+            () -> new FoodArmor(ArmorMaterials.LEATHER, ArmorItem.Type.LEGGINGS,
+                    new Item.Properties().durability(100)));
     public static final DeferredItem<Item> FAT_BOOTS = ITEMS.register("fat_boots",
             () -> new FoodArmor(ArmorMaterials.LEATHER, ArmorItem.Type.BOOTS, new Item.Properties().durability(100)));
     public static final DeferredItem<Item> MUSCLE_HELMET = ITEMS.register("muscle_helmet",
@@ -200,17 +206,32 @@ public class Ishouldeatmore {
                 }
             });
         });
+        registrar.playToClient(FoodLevelStagePayload.TYPE, FoodLevelStagePayload.STREAM_CODEC, (payload, context) -> {
+            context.enqueueWork(() -> {
+                var player = Minecraft.getInstance().player;
+                if (player != null && player.getFoodData() instanceof FoodDataSync sync) {
+                    sync.ishouldeatmore$setFoodLevelStage(payload.stage());
+                }
+            });
+        });
         registrar.playToServer(AirJumpPayload.TYPE, AirJumpPayload.STREAM_CODEC, (payload, context) -> {
             context.enqueueWork(() -> {
                 if (context.player() instanceof ServerPlayer player) {
-                    if (FoodArmor.isWearingFoodLeggings(player) && payload.delta() > 3) {
+                    if (FoodArmor.isWearingFoodLeggings(player)) {
                         Vec3 motion = player.getDeltaMovement();
-                        if (motion.y < 0.1) {
+                        float consumed = 0.01f;
+                        if (motion.y < 0.05 && payload.delta() == 0) {
+                            // hover when delta is 0
                             player.setDeltaMovement(motion.x, 0, motion.z);
                         }
+                        if (payload.delta() > 0) {
+                            // jump if delta > 0
+                            player.setDeltaMovement(new Vec3(motion.x, payload.delta(), motion.z));
+                            consumed = 1f;
+                        }
                         float saturationLevel = player.getFoodData().getSaturationLevel();
-                        if (saturationLevel >= 0.01f) {
-                            player.getFoodData().setSaturation(saturationLevel - 0.01f);
+                        if (saturationLevel >= consumed) {
+                            player.getFoodData().setSaturation(saturationLevel - consumed);
                         } else {
                             player.getFoodData().setSaturation(0);
                         }
@@ -218,6 +239,22 @@ public class Ishouldeatmore {
                 }
             });
         });
+        registrar.playToServer(DashPayload.TYPE, DashPayload.STREAM_CODEC, ((payload, context) -> {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    if (FoodArmor.isWearingFoodLeggings(player)) {
+                        float consumed = 1f;
+                        player.addDeltaMovement(player.getLookAngle().normalize().scale(0.7));
+                        float saturationLevel = player.getFoodData().getSaturationLevel();
+                        if (saturationLevel >= consumed) {
+                            player.getFoodData().setSaturation(saturationLevel - consumed);
+                        } else {
+                            player.getFoodData().setSaturation(0);
+                        }
+                    }
+                }
+            });
+        }));
     }
 
     @SubscribeEvent
@@ -239,11 +276,22 @@ public class Ishouldeatmore {
             FoodProperties foodProperties = food.getFoodProperties(null);
             boolean shouldApply = foodProperties != null && foodProperties.nutrition() > 0;
             if (shouldApply) {
-                // Sync foodEaten to client so client-side FoodData stays in sync
-                if (player instanceof ServerPlayer serverPlayer && player.getFoodData() instanceof FoodDataSync sync) {
-                    PacketDistributor.sendToPlayer(serverPlayer,
-                            new SyncFoodEatenPayload(sync.ishouldeatmore$getFoodEaten()));
+                FoodData foodData = player.getFoodData();
+                if (foodData instanceof FoodDataSync foodDataSync
+                        && Math.log10(foodData.getFoodLevel()) == Math.max(2,
+                        foodDataSync.ishouldeatmore$getFoodLevelStage() + 1)) {
+                    player.playSound(SoundEvents.LIGHTNING_BOLT_THUNDER);
+                    if (player instanceof ServerPlayer serverPlayer){
+                        float hurtDamage = (float) Math.pow(10, foodDataSync.ishouldeatmore$getFoodLevelStage()) * 2;
+                        player.hurt(player.level().damageSources().source(DamageTypes.LIGHTNING_BOLT), hurtDamage);
+                        foodDataSync.ishouldeatmore$setFoodLevelStage(foodDataSync.ishouldeatmore$getFoodLevelStage() + 1);
+                        PacketDistributor.sendToPlayer(serverPlayer,
+                                new SyncFoodEatenPayload(foodDataSync.ishouldeatmore$getFoodEaten()));
+                        PacketDistributor.sendToPlayer(serverPlayer,
+                                new FoodLevelStagePayload(foodDataSync.ishouldeatmore$getFoodLevelStage()));
+                    }
                 }
+                player.addEffect(new MobEffectInstance(MobEffects.SATURATION, 120, 15));
             }
         }
     }
@@ -253,6 +301,8 @@ public class Ishouldeatmore {
         Player player = event.getEntity();
         if (player instanceof ServerPlayer serverPlayer && player.getFoodData() instanceof FoodDataSync sync) {
             PacketDistributor.sendToPlayer(serverPlayer, new SyncFoodEatenPayload(sync.ishouldeatmore$getFoodEaten()));
+            PacketDistributor.sendToPlayer(serverPlayer,
+                    new FoodLevelStagePayload(sync.ishouldeatmore$getFoodLevelStage()));
         }
     }
 
@@ -267,17 +317,24 @@ public class Ishouldeatmore {
         FoodData foodData = player.getFoodData();
         int foodLevel = foodData.getFoodLevel();
         int saturationLevel = (int) foodData.getSaturationLevel();
+        int foodLevelStage = -1;
+        if (foodData instanceof FoodDataSync) {
+            foodLevelStage = ((FoodDataSync) foodData).ishouldeatmore$getFoodLevelStage();
+        }
 
         int y = mc.getWindow().getGuiScaledHeight() - mc.gui.rightHeight - 10;
         int x = mc.getWindow().getGuiScaledWidth() / 2 + 10;
 
         RenderSystem.enableBlend();
         GuiGraphics guiGraphics = event.getGuiGraphics();
-        guiGraphics.blitSprite(FOOD_EMPTY_SPRITE, x, y, 9, 9);
-        guiGraphics.blitSprite(FOOD_HALF_SPRITE, x, y, 9, 9);
+        int iconCount = Math.max(1, foodLevelStage);
+        for (int i = 0; i < iconCount; i++) {
+            guiGraphics.blitSprite(FOOD_EMPTY_SPRITE, x + 8 * i, y, 9, 9);
+            guiGraphics.blitSprite(FOOD_HALF_SPRITE, x + 8 * i, y, 9, 9);
+        }
         String countString = """
                 *%d (+%d)""".formatted(foodLevel, saturationLevel);
-        guiGraphics.drawString(mc.gui.getFont(), Component.literal(countString), x + 9, y, 0xffffff);
+        guiGraphics.drawString(mc.gui.getFont(), Component.literal(countString), x + 8 * iconCount, y, 0xffffff);
         RenderSystem.disableBlend();
     }
 
@@ -289,7 +346,7 @@ public class Ishouldeatmore {
             }
             int foodLevel = player.getFoodData().getFoodLevel();
             float saturationLevel = player.getFoodData().getSaturationLevel();
-            if (Math.log10(Math.max(1, foodLevel)) < 2) {
+            if (getFoodLevelStage() < 2) {
                 return;
             }
             float originalDamage = event.getAmount();
@@ -384,14 +441,85 @@ public class Ishouldeatmore {
         Minecraft mc = Minecraft.getInstance();
         boolean jumpPressed = mc.options.keyJump.isDown();
         if (jumpPressed && FoodArmor.isWearingFoodLeggings(player) && player.level().isClientSide) {
-            double delta = Math.log10(player.getFoodData().getFoodLevel());
-            if (delta > 3) {
+            if (getFoodLevelStage() >= 3) {
                 Vec3 motion = player.getDeltaMovement();
                 if (motion.y < 0.1) {
                     player.setDeltaMovement(motion.x, 0, motion.z);
                 }
-                PacketDistributor.sendToServer(new AirJumpPayload(delta));
+                PacketDistributor.sendToServer(new AirJumpPayload(0));
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onAirJump(InputEvent.Key event) {
+        KeyMapping keyJump = Minecraft.getInstance().options.keyJump;
+        if (isKeyPressed(event, keyJump, 4)) {
+            keyJump.consumeClick();
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null) {
+                return;
+            }
+            Vec3 currentDelta = player.getDeltaMovement();
+            player.setDeltaMovement(new Vec3(currentDelta.x, 0.7, currentDelta.z));
+            PacketDistributor.sendToServer(new AirJumpPayload(0.7));
+        }
+
+        KeyMapping keySprint = Minecraft.getInstance().options.keySprint;
+        if (isKeyPressed(event, keySprint, 5)) {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null || player.onGround()) {
+                return;
+            }
+            keySprint.consumeClick();
+            player.addDeltaMovement(player.getLookAngle().normalize().scale(0.7));
+            PacketDistributor.sendToServer(new DashPayload(0.7));
+        }
+    }
+
+    private static boolean isKeyPressed(InputEvent.Key event, KeyMapping key, int foodLevelStageLimit) {
+        if (!key.matches(event.getKey(), event.getScanCode())) {
+            return false;
+        }
+        if (!isInGame()) {
+            return false;
+        }
+        if (event.getAction() != GLFW.GLFW_PRESS) {
+            return false;
+        }
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || player.isShiftKeyDown()) {
+            return false;
+        }
+        if (getFoodLevelStage() < foodLevelStageLimit) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isInGame() {
+        Minecraft mc = Minecraft.getInstance();
+        // 不能是加载界面
+        if (mc.getOverlay() != null) {
+            return false;
+        }
+        // 不能打开任何 GUI
+        if (mc.screen != null) {
+            return false;
+        }
+        // 当前窗口捕获鼠标操作
+        if (!mc.mouseHandler.isMouseGrabbed()) {
+            return false;
+        }
+        // 选择了当前窗口
+        return mc.isWindowActive();
+    }
+
+    private static int getFoodLevelStage() {
+        if (Minecraft.getInstance().player != null
+                && Minecraft.getInstance().player.getFoodData() instanceof FoodDataSync foodData) {
+            return foodData.ishouldeatmore$getFoodLevelStage();
+        }
+        return 0;
     }
 }

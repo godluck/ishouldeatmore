@@ -1,8 +1,10 @@
 package com.gdlk.ishouldeatmore.mixin;
 
 import com.gdlk.ishouldeatmore.network.FoodDataSync;
+import com.gdlk.ishouldeatmore.network.FoodLevelStagePayload;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.food.FoodData;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.io.*;
 import java.util.*;
 
+import static com.gdlk.ishouldeatmore.Ishouldeatmore.LOGGER;
+
 @Mixin(value = {FoodData.class}, priority = 1001)
 public abstract class FoodDataMixin implements FoodDataSync {
     private int foodLevel;
@@ -19,6 +23,7 @@ public abstract class FoodDataMixin implements FoodDataSync {
     private float exhaustionLevel;
     private int tickTimer;
     private Queue<String> foodEaten;
+    private int foodLevelStage;
 
     public FoodDataMixin() {
     }
@@ -49,11 +54,18 @@ public abstract class FoodDataMixin implements FoodDataSync {
         this.foodLevel = (int)Math.round((double) foodLevel / magnitude * foodQuality * varietyScale) + this.foodLevel;
         if (saturationLevel + this.saturationLevel > this.foodLevel) {
             float diff = saturationLevel + this.saturationLevel - this.foodLevel;
-            int diffMagnitude = Math.max(Math.getExponent(diff), 1);
-            float saturationToAdd = (float) (saturationLevel / diffMagnitude * foodQuality);
+            int diffMagnitude = (int) Math.max(Math.log10(diff), 1);
+            float saturationToAdd = (float) (saturationLevel / diffMagnitude * foodQuality * varietyScale);
             this.saturationLevel += saturationToAdd;
         } else {
-            this.saturationLevel = (float) (saturationLevel * foodQuality + this.saturationLevel);
+            this.saturationLevel = (float) (saturationLevel * foodQuality * varietyScale + this.saturationLevel);
+        }
+        if (Math.log10(this.foodLevel) >= 1 && this.foodLevelStage < 1){
+            this.foodLevelStage = 1;
+        }
+        int foodLevelStageLimit = Math.max(2, this.foodLevelStage + 1);
+        if (Math.log10(this.foodLevel) > foodLevelStageLimit){
+            this.foodLevel = (int) Math.pow(10, foodLevelStageLimit);
         }
 
         ci.cancel();
@@ -77,6 +89,16 @@ public abstract class FoodDataMixin implements FoodDataSync {
         this.foodEaten = foodEaten == null ? new ArrayDeque<>() : new ArrayDeque<>(foodEaten);
     }
 
+    @Override
+    public int ishouldeatmore$getFoodLevelStage(){
+        return this.foodLevelStage;
+    }
+
+    @Override
+    public void ishouldeatmore$setFoodLevelStage(int foodLevelStage){
+        this.foodLevelStage = foodLevelStage;
+    }
+
     @Inject(method = "readAdditionalSaveData", at = @At("HEAD"), cancellable = true)
     public void readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo ci) {
         if (compoundTag.contains("foodLevel", 99)) {
@@ -84,6 +106,7 @@ public abstract class FoodDataMixin implements FoodDataSync {
             this.tickTimer = compoundTag.getInt("foodTickTimer");
             this.saturationLevel = compoundTag.getFloat("foodSaturationLevel");
             this.exhaustionLevel = compoundTag.getFloat("foodExhaustionLevel");
+            this.foodLevelStage = compoundTag.getInt("foodLevelStage");
             boolean hasFoodEaten = compoundTag.contains("foodEaten");
             if (hasFoodEaten) {
                 byte[] foodEaten = compoundTag.getByteArray("foodEaten");
@@ -106,6 +129,7 @@ public abstract class FoodDataMixin implements FoodDataSync {
         compoundTag.putInt("foodTickTimer", this.tickTimer);
         compoundTag.putFloat("foodSaturationLevel", this.saturationLevel);
         compoundTag.putFloat("foodExhaustionLevel", this.exhaustionLevel);
+        compoundTag.putInt("foodLevelStage", this.foodLevelStage);
         if (this.foodEaten != null && !this.foodEaten.isEmpty()) {
             ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
             try {
