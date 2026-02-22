@@ -33,8 +33,8 @@ public abstract class FoodDataMixin implements FoodDataSync {
         // Track foodLevel & saturationLevel combination
         String foodKey = """
                 %s,%.2f""".formatted(foodLevel, saturationLevel);
-        double magnitude = Math.max(Math.log10(this.foodLevel), 1);
-        int magInt = (int) magnitude + 5;
+        int magnitude = Math.max(this.foodLevelStage, 1);
+        int magInt = magnitude + 5;
         if (this.foodEaten == null) {
             this.foodEaten = new ArrayDeque<>(magInt);
         }
