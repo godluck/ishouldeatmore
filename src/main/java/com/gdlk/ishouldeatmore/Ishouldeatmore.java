@@ -17,6 +17,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.food.FoodData;
@@ -30,6 +31,7 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerDestroyItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -53,6 +55,11 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.client.event.InputEvent;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(Ishouldeatmore.MODID)
 public class Ishouldeatmore {
@@ -60,6 +67,29 @@ public class Ishouldeatmore {
     public static final String MODID = "ishouldeatmore";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    /** Delay in server ticks before applying lightning damage (20 ≈ 1 second). */
+    private static final int LIGHTNING_DAMAGE_DELAY_TICKS = 20;
+    private static final List<PendingLightningDamage> pendingLightningDamage = new ArrayList<>();
+
+    private static final class PendingLightningDamage {
+        final UUID playerId;
+        final float damagePerHit;
+        int numHits;
+        final int newStage;
+        int ticksRemaining;
+        final int delayPerHit;
+
+        PendingLightningDamage(UUID playerId, float damagePerHit, int numHits, int newStage, int delayPerHit) {
+            this.playerId = playerId;
+            this.damagePerHit = damagePerHit;
+            this.numHits = numHits;
+            this.newStage = newStage;
+            this.ticksRemaining = delayPerHit;
+            this.delayPerHit = delayPerHit;
+        }
+    }
+
     // Create a Deferred Register to hold Blocks which will all be registered under
     // the "ishouldeatmore" namespace
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
@@ -128,13 +158,13 @@ public class Ishouldeatmore {
                     new Item.Properties().durability(2000)));
     public static final DeferredItem<Item> GOLDEN_ARM_CHESTPLATE = ITEMS.register("golden_arm_chestplate",
             () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.CHESTPLATE,
-                    new Item.Properties().durability(600)));
+                    new Item.Properties().durability(2000)));
     public static final DeferredItem<Item> GOLDEN_ARM_LEGGINGS = ITEMS.register("golden_arm_leggings",
             () -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.LEGGINGS,
-                    new Item.Properties().durability(600)));
+                    new Item.Properties().durability(2000)));
     public static final DeferredItem<Item> GOLDEN_ARM_BOOTS = ITEMS.register("golden_arm_boots",
             (props) -> new FoodArmor(ArmorMaterials.NETHERITE, ArmorItem.Type.BOOTS,
-                    new Item.Properties().durability(600)));
+                    new Item.Properties().durability(2000)));
 
     // Creates a creative tab with the id "ishouldeatmore:food_tool_tab" for the
     // example item, that is placed after the combat tab
@@ -269,6 +299,19 @@ public class Ishouldeatmore {
         }
     }
 
+    public static boolean singleLighting(ServerPlayer player, float damage){
+        var damageSource = player.level().damageSources().source(DamageTypes.LIGHTNING_BOLT);
+        if (player.hurt(damageSource, damage)){
+            // Spawn visual-only lightning bolt
+            LightningBolt bolt = new LightningBolt(net.minecraft.world.entity.EntityType.LIGHTNING_BOLT, player.level());
+            bolt.setPos(player.getX(), player.getY(), player.getZ());
+            bolt.setVisualOnly(true);
+            player.level().addFreshEntity(bolt);
+            return true;
+        }
+        return false;
+    }
+
     @SubscribeEvent
     public void onFoodEaten(LivingEntityUseItemEvent.Finish event) {
         if (event.getEntity() instanceof Player player) {
@@ -280,18 +323,49 @@ public class Ishouldeatmore {
                 if (foodData instanceof FoodDataSync foodDataSync
                         && Math.log10(foodData.getFoodLevel()) == Math.max(2,
                         foodDataSync.ishouldeatmore$getFoodLevelStage() + 1)) {
-                    player.playSound(SoundEvents.LIGHTNING_BOLT_THUNDER);
                     if (player instanceof ServerPlayer serverPlayer){
-                        float hurtDamage = (float) Math.pow(10, foodDataSync.ishouldeatmore$getFoodLevelStage()) * 2;
-                        player.hurt(player.level().damageSources().source(DamageTypes.LIGHTNING_BOLT), hurtDamage);
-                        foodDataSync.ishouldeatmore$setFoodLevelStage(foodDataSync.ishouldeatmore$getFoodLevelStage() + 1);
                         PacketDistributor.sendToPlayer(serverPlayer,
                                 new SyncFoodEatenPayload(foodDataSync.ishouldeatmore$getFoodEaten()));
+                        // Schedule damage and stage update after delay so damage is separated
+                        int foodLevelStage = foodDataSync.ishouldeatmore$getFoodLevelStage();
+                        float hurtDamage = (float) Math.pow(10, foodLevelStage) * 2;
+                        synchronized (pendingLightningDamage) {
+                            if (pendingLightningDamage.stream().noneMatch(i -> i.playerId == serverPlayer.getUUID())){
+                                pendingLightningDamage.add(new PendingLightningDamage(
+                                        serverPlayer.getUUID(), hurtDamage, foodLevelStage, foodLevelStage + 1, LIGHTNING_DAMAGE_DELAY_TICKS));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onServerTick(ServerTickEvent.Post event) {
+        synchronized (pendingLightningDamage) {
+            Iterator<PendingLightningDamage> it = pendingLightningDamage.iterator();
+            while (it.hasNext()) {
+                PendingLightningDamage pending = it.next();
+                if (pending.ticksRemaining > 0){
+                    pending.ticksRemaining--;
+                }
+                if (pending.ticksRemaining > 0) continue;
+                ServerPlayer serverPlayer = event.getServer().getPlayerList().getPlayer(pending.playerId);
+                if (serverPlayer == null || !serverPlayer.isAlive()) {
+                    it.remove();
+                    continue;
+                }
+                if (singleLighting(serverPlayer, pending.damagePerHit)){
+                    pending.numHits--;
+                    pending.ticksRemaining = pending.delayPerHit;
+                    if (serverPlayer.getFoodData() instanceof FoodDataSync foodDataSync && pending.numHits == 0) {
+                        it.remove();
+                        foodDataSync.ishouldeatmore$setFoodLevelStage(pending.newStage);
                         PacketDistributor.sendToPlayer(serverPlayer,
                                 new FoodLevelStagePayload(foodDataSync.ishouldeatmore$getFoodLevelStage()));
                     }
                 }
-                player.addEffect(new MobEffectInstance(MobEffects.SATURATION, 120, 15));
             }
         }
     }
