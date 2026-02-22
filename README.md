@@ -22,13 +22,13 @@ NeoForge 模组，主题是「吃得越多越强」：饱食度与饱和度参�
 
 共 5 个等级，均为「按饱食度加伤、攻击时消耗饱食度/饱和度」的剑：
 
-| 剑         | 材质等级 | 额外伤害倍率 | 说明 |
-|------------|----------|--------------|------|
-| 肥肉剑     | 木       | 1×           | 基础 |
-| 肌肉剑     | 石头     | 2×           |  |
-| 骨剑       | 铁       | 1.5×         |  |
-| 胳膊剑     | 钻石     | 4×           |  |
-| 附魔金胳膊剑 | 下界合金 | 6×           |  |
+| 剑         | 材质等级 | 额外伤害倍率 |
+|------------|----------|--------------|
+| 肥肉剑     | 木       | 1×           |
+| 肌肉剑     | 石头     | 2×           |
+| 骨剑       | 铁       | 1.5×         |
+| 胳膊剑     | 钻石     | 4×           |
+| 附魔金胳膊剑 | 下界合金 | 6×           |
 
 - **额外伤害**：基础量 = `(log10(饱食度))²`，再乘以上表倍率；饱食度 &lt; 10 时无加成。
 - **攻击消耗**：每次命中敌人会按 `log10(饱食度)` 消耗饱和度，不足时再扣饱食度。
@@ -37,7 +37,7 @@ NeoForge 模组，主题是「吃得越多越强」：饱食度与饱和度参�
 
 ## 食物盔甲（Food Armor）
 
-五套盔甲（肥肉 / 肌肉 / 骨头 / 胳膊 / 金胳膊），每套 4 件（头盔、胸甲、护腿、靴子）。材质等价于：链甲、链甲、铁、钻石、下界合金。
+五套盔甲（肥肉 / 肌肉 / 骨头 / 胳膊 / 金胳膊），每套 4 件（头盔、胸甲、护腿、靴子）。材质等价于：金、链甲、铁、钻石、下界合金。
 
 ### 伤害减免
 
@@ -50,7 +50,7 @@ NeoForge 模组，主题是「吃得越多越强」：饱食度与饱和度参�
   - 金胳膊套：最多 100%
 - 仅当 `饱食度 ≥ 100`（即饱食度足够高）时才会触发减免；先扣饱和度，再扣饱食度。
 
-### 空中二段跳（护腿）
+### 空中悬浮（护腿）
 
 - 穿着任意一件**食物护腿**（本 mod 的 leggings）时，如果`饱食度 ≥ 1000`, 可在空中长按跳跃实现**水平悬浮**。
 - 每tick会消耗少量饱和度（0.01）；不会消耗饱食度。
@@ -81,7 +81,7 @@ NeoForge 模组，主题是「吃得越多越强」：饱食度与饱和度参�
 
 ## 作者与许可
 
-- 作者：gdlk  
+- 作者：godluck
 - 模组描述：Eat as much as you could.
 
 映射与许可等说明见仓库内 `TEMPLATE_LICENSE.txt` 及 [NeoForged 文档](https://docs.neoforged.net/)。
@@ -127,7 +127,7 @@ Five tiers of swords that all add damage based on food level and consume food/sa
 
 ## Food Armor
 
-Five sets (Fat / Muscle / Bone / Arm / Golden Arm), four pieces each (helmet, chestplate, leggings, boots). Material tiers match: chainmail, chainmail, iron, diamond, netherite.
+Five sets (Fat / Muscle / Bone / Arm / Golden Arm), four pieces each (helmet, chestplate, leggings, boots). Material tiers match: gold, chainmail, iron, diamond, netherite.
 
 ### Damage reduction
 
@@ -140,7 +140,7 @@ Five sets (Fat / Muscle / Bone / Arm / Golden Arm), four pieces each (helmet, ch
   - Golden Arm: up to 100%
 - Reduction only applies when **food level ≥ 100**. Saturation is consumed first, then food level.
 
-### Air jump (leggings)
+### Hover (leggings)
 
 - While wearing any **Food Armor leggings**, if **food level ≥ 1000**, holding jump in mid-air lets you **hover** (sustained lift).
 - Costs a small amount of saturation per tick (0.01); food level is not consumed.
@@ -171,7 +171,7 @@ All mod swords and armor appear in the creative tab **“I should eat more”**,
 
 ## Author and license
 
-- Author: gdlk  
+- Author: godluck
 - Mod description: Eat as much as you could.
 
 For mapping and license details, see `TEMPLATE_LICENSE.txt` in the repo and [NeoForged docs](https://docs.neoforged.net/).
