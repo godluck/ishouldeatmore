@@ -1,5 +1,6 @@
 package com.gdlk.ishouldeatmore.item;
 
+import com.gdlk.ishouldeatmore.network.FoodDataSync;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -20,9 +21,10 @@ public class FoodSword extends SwordItem {
             ItemStack stack = player.getMainHandItem();
             if (stack.isEmpty() || !(stack.getItem() instanceof FoodSword)) return 0;
             FoodData foodData = player.getFoodData();
-            double mag = Math.log10(foodData.getFoodLevel());
-            if (mag < 1) return 0;
-            return (float) (mag * mag);
+            if (foodData instanceof FoodDataSync foodDataSync){
+                int stage = foodDataSync.ishouldeatmore$getFoodLevelStage();
+                return stage * stage;
+            }
         }
         return 0;
     }
@@ -31,21 +33,23 @@ public class FoodSword extends SwordItem {
     public void postHurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         if (attacker instanceof Player player) {
             FoodData foodData = player.getFoodData();
-            float saturationLevel = foodData.getSaturationLevel();
-            int foodLevel = foodData.getFoodLevel();
-            double mag = Math.log10(foodLevel);
-            if (mag < 1) return;
+            if (foodData instanceof FoodDataSync foodDataSync){
+                int stage = foodDataSync.ishouldeatmore$getFoodLevelStage();
+                float saturationLevel = foodData.getSaturationLevel();
+                int foodLevel = foodData.getFoodLevel();
+                if (stage < 1) return;
 
-            if (saturationLevel > mag) {
-                foodData.setSaturation((float) (saturationLevel - mag));
-            } else if (saturationLevel + foodLevel > mag) {
-                foodData.setSaturation(0);
-                foodData.setFoodLevel((int) Math.round(foodLevel + saturationLevel - mag));
-            } else {
-                foodData.setFoodLevel(0);
-                foodData.setSaturation(0);
+                if (saturationLevel > stage) {
+                    foodData.setSaturation(saturationLevel - stage);
+                } else if (saturationLevel + foodLevel > stage) {
+                    foodData.setSaturation(0);
+                    foodData.setFoodLevel(Math.round(foodLevel + saturationLevel - stage));
+                } else {
+                    foodData.setFoodLevel(0);
+                    foodData.setSaturation(0);
+                }
+                stack.hurtAndBreak(1, attacker, EquipmentSlot.MAINHAND);
             }
-            stack.hurtAndBreak(1, attacker, EquipmentSlot.MAINHAND);
         }
     }
 }
