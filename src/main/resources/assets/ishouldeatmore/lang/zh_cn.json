@@ -50,5 +50,6 @@
   "item.ishouldeatmore.golden_arm_leggings": "金大腿护腿",
   "item.ishouldeatmore.golden_arm_leggings.tooltip": "消耗饱食度减免伤害，全套最多100%。穿戴后可无限空中二段跳。",
   "item.ishouldeatmore.golden_arm_boots": "金脚丫靴子",
-  "item.ishouldeatmore.golden_arm_boots.tooltip": "消耗饱食度与饱和度减免伤害。全套最多减免100%。"
+  "item.ishouldeatmore.golden_arm_boots.tooltip": "消耗饱食度与饱和度减免伤害。全套最多减免100%。",
+  "title.ishouldeatmore.lighting.warning": "⚡雷劫开始⚡"
 }

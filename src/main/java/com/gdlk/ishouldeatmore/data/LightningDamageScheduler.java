@@ -2,6 +2,9 @@ package com.gdlk.ishouldeatmore.data;
 
 import com.gdlk.ishouldeatmore.network.FoodDataSync;
 import com.gdlk.ishouldeatmore.network.FoodLevelStagePayload;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -31,6 +34,10 @@ public final class LightningDamageScheduler {
     public void scheduleForStageAdvance(ServerPlayer player, int currentStage, int newStage) {
         float hurtDamage = (float) Math.pow(10, currentStage) * 2;
         UUID playerId = player.getUUID();
+        Component title = Component.translatable(
+                "title.ishouldeatmore.lighting.warning"
+        ).withStyle(ChatFormatting.RED).withStyle(style -> style.withBold(true));
+        player.connection.send(new ClientboundSetTitleTextPacket(title));
         synchronized (pending) {
             if (pending.stream().noneMatch(p -> p.playerId().equals(playerId))) {
                 pending.add(new PendingLightningDamage(

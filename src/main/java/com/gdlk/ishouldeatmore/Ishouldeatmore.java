@@ -1,6 +1,7 @@
 package com.gdlk.ishouldeatmore;
 
 import com.gdlk.ishouldeatmore.data.LightningDamageScheduler;
+import com.gdlk.ishouldeatmore.datagen.DataGenerators;
 import com.gdlk.ishouldeatmore.event.FoodEvents;
 import com.gdlk.ishouldeatmore.event.ItemTooltipHandler;
 import com.gdlk.ishouldeatmore.event.PlayerEvents;
@@ -142,6 +143,7 @@ public class Ishouldeatmore {
         NeoForge.EVENT_BUS.register(new ServerTickHandler(lightningScheduler));
 
         modEventBus.addListener(RegisterPayloadHandlersEvent.class, PayloadHandlers::register);
+        modEventBus.addListener(net.neoforged.neoforge.data.event.GatherDataEvent.class, DataGenerators::gatherData);
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 }

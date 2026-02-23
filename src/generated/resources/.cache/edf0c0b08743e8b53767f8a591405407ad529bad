@@ -1,0 +1,10 @@
+// 1.21.1	2026-02-23T10:12:04.23402	Tags for minecraft:item mod id minecraft
+0d2c22bf2840aadec946de8ba3ee2679afc49340 data/minecraft/tags/item/enchantable/armor.json
+05d0e073b36cb3882d2a28ba32351ab3b89b6f6a data/minecraft/tags/item/enchantable/chest_armor.json
+558c24af9df831a18a0b53316aecfc1b0c66c0a3 data/minecraft/tags/item/enchantable/durability.json
+54a710ba59be39949cddc484ba19099f065811f2 data/minecraft/tags/item/enchantable/fire_aspect.json
+fb34907ca9fe3251187778d16075ff8e38654ce4 data/minecraft/tags/item/enchantable/foot_armor.json
+c5cdf3903354f65dc35abc18acca63c5706ea15a data/minecraft/tags/item/enchantable/head_armor.json
+e29b7ddffb1e6576981311c942ccfc2f7385d580 data/minecraft/tags/item/enchantable/leg_armor.json
+54a710ba59be39949cddc484ba19099f065811f2 data/minecraft/tags/item/enchantable/sharp_weapon.json
+54a710ba59be39949cddc484ba19099f065811f2 data/minecraft/tags/item/enchantable/sword.json
